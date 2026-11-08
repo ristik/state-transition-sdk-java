@@ -60,6 +60,16 @@ public final class TrustBaseCacheKey {
     return HexConverter.encode(sha256(bytes));
   }
 
+  /**
+   * The SHA-256 of bytes.
+   *
+   * @param bytes the bytes
+   * @return the digest
+   */
+  public static byte[] sha256Of(byte[] bytes) {
+    return sha256(bytes);
+  }
+
   static byte[] sha256(byte[] bytes) {
     try {
       return MessageDigest.getInstance("SHA-256").digest(bytes);
