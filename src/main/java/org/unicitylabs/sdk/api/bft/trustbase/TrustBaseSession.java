@@ -74,6 +74,10 @@ public final class TrustBaseSession implements TrustBaseUpdateTarget {
   private final long pinnedEpoch;
   private final ReleasePin pin;
   private volatile TrustBaseHistory history;
+  /** Guards the dirty flag against the history it describes: appends and the settling of a flush. */
+  private final Object lock = new Object();
+  /** Test hook: runs where a flush settles the dirty flag, before it does. */
+  volatile Runnable settleHook;
   private final TrustBaseHistoryView view;
   private volatile boolean dirty;
   private boolean repair;
@@ -372,7 +376,7 @@ public final class TrustBaseSession implements TrustBaseUpdateTarget {
    */
   @Override
   public TrustBaseAppendOutcome append(TrustBaseEntry entry) {
-    synchronized (this.history) {
+    synchronized (this.lock) {
       return appendNow(entry);
     }
   }
@@ -613,11 +617,15 @@ public final class TrustBaseSession implements TrustBaseUpdateTarget {
         this.blocked = null;
       }
       byte[] ours = this.history.getTip().get().entryId();
+      Runnable hook = this.settleHook;
+      if (hook != null) {
+        hook.run();
+      }
       if ((diskTip != null && Arrays.equals(diskTip, ours)) || (expected == null && !this.dirty)) {
         // the store holds this history (other valid witnesses are not worth a rewrite), or there
         // is nothing of ours to save
         this.repair = false;
-        this.dirty = false;
+        settle(ours);
         return FlushResult.saved(false, diagnostics);
       }
       byte[] out = this.history.toBundle();
@@ -625,7 +633,7 @@ public final class TrustBaseSession implements TrustBaseUpdateTarget {
         if (await(this.store.compareAndSwap(this.key, expected, out))
             == TrustBaseStore.CasOutcome.WRITTEN) {
           // an append during the save keeps the history dirty
-          this.dirty = !Arrays.equals(this.history.getTip().get().entryId(), ours);
+          settle(ours);
           this.repair = false;
           return FlushResult.saved(true, diagnostics);
         }
@@ -635,6 +643,16 @@ public final class TrustBaseSession implements TrustBaseUpdateTarget {
     }
     return FlushResult.pending(
         new CacheContendedException("The store changed during every save attempt."));
+  }
+
+  /**
+   * The store holds the history as it was at {@code saved} (its tip): the session is clean only if
+   * nothing was appended since, which a synchronous append from another thread may have done.
+   */
+  private void settle(byte[] saved) {
+    synchronized (this.lock) {
+      this.dirty = !Arrays.equals(this.history.getTip().get().entryId(), saved);
+    }
   }
 
   /**

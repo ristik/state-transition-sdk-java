@@ -200,6 +200,43 @@ class TrustBaseSessionTest {
   }
 
   @Test
+  void anAppendLandingWhileAFlushSettlesIsNeverMarkedSaved() {
+    // the store already holds exactly what the session held when the flush read its tip ...
+    ReleasePin pin = this.fx.pin("A1-3");
+    Script store = scriptFor(pin);
+    TrustBaseSession s = open(pin, store);
+    s.append(this.fx.entry("A4"));
+    store.inner.put(store.key, this.fx.bundle("A1-4"));
+    // ... and a synchronous append from another thread lands before the flush settles
+    s.settleHook = () -> {
+      s.settleHook = null;
+      s.append(this.fx.entry("A5"));
+    };
+    FlushResult flush = get(s.flush());
+    assertTrue(flush.isSaved() && !flush.isWrote());
+    assertTrue(s.isDirty(), "the new entry is not saved yet");
+    assertTrue(get(s.flush()).isWrote());
+    assertArrayEquals(this.fx.bundle("A1-5"), store.inner.get(store.key));
+    assertFalse(s.isDirty());
+  }
+
+  @Test
+  void anAppendLandingBeforeTheWriteIsStillSavedByTheNextFlush() {
+    ReleasePin pin = this.fx.pin("A1-3");
+    Script store = scriptFor(pin);
+    TrustBaseSession s = open(pin, store);
+    s.append(this.fx.entry("A4"));
+    s.settleHook = () -> {
+      s.settleHook = null;
+      s.append(this.fx.entry("A5"));
+    };
+    assertTrue(get(s.flush()).isWrote());
+    get(s.flush());
+    assertArrayEquals(this.fx.bundle("A1-5"), store.inner.get(store.key));
+    assertFalse(s.isDirty());
+  }
+
+  @Test
   void anAuthenticatedForkLatchesAndStopsEveryWriteAndRead() {
     ReleasePin pin = this.fx.pin("A1-3");
     Script store = scriptFor(pin);
