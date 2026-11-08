@@ -58,8 +58,8 @@ Mainnet is live. Start with testnet2; for production, use the mainnet gateway an
 
 | Network | Gateway | Network ID | Trust base |
 | --- | --- | --- | --- |
-| Mainnet | `https://gateway.mainnet.unicity.network` | `1` | V2 bundle: with the release pins of this SDK (a later release step) |
-| Testnet2 | `https://gateway.testnet2.unicity.network` | `4` | V2 bundle: with the release pins of this SDK (a later release step) |
+| Mainnet | `https://gateway.mainnet.unicity.network` | `1` | genesis pinned in this SDK (`ReleasePins`); open it with `TrustBaseSession.openPublic` |
+| Testnet2 | `https://gateway.testnet2.unicity.network` | `4` | genesis pinned in this SDK (`ReleasePins`); open it with `TrustBaseSession.openPublic` |
 
 Pass your gateway API key as the second argument to `JsonRpcAggregatorClient`. The public testnet2 key is `sk_ddc3cfcc001e4a28ac3fad7407f99590`. Use your own mainnet key obtained from [Sphere](https://sphere.unicity.network/) and keep it secure.
 
