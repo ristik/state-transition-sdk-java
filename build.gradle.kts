@@ -83,6 +83,37 @@ java {
     withJavadocJar()
 }
 
+// The SDK version, generated from the Gradle project version so the X-SDK-Version header can never drift from the artifact.
+val generateSdkVersion by tasks.registering {
+    val outputDir = layout.buildDirectory.dir("generated/sdk-version")
+    val sdkVersion = project.version.toString()
+    inputs.property("version", sdkVersion)
+    outputs.dir(outputDir)
+    doLast {
+        val file = outputDir.get().file("org/unicitylabs/sdk/SdkVersion.java").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            package org.unicitylabs.sdk;
+
+            /** The version of this SDK, generated from the Gradle project version. */
+            public final class SdkVersion {
+
+              /** The SDK version. */
+              public static final String VERSION = "$sdkVersion";
+
+              private SdkVersion() {
+              }
+            }
+            """.trimIndent() + "\n"
+        )
+    }
+}
+
+sourceSets.main {
+    java.srcDir(generateSdkVersion)
+}
+
 checkstyle {
     configFile = file("config/checkstyle/checkstyle.xml")
     // TODO: Clean up test checkstyle and enable it

@@ -89,7 +89,7 @@ public class Connect {
 }
 ```
 
-The trust base identifies the Consensus Layer (BFT Core) instance. Pin a trusted copy in your application for production. Use `trustBase.getNetworkId()` when creating tokens so they match your gateway; testnet2 is network ID `4` (`NetworkId.TESTNET` is `2`).
+The trust base identifies the Consensus Layer (BFT Core) instance. Pin a trusted copy in your application for production. Use `trustBase.getNetworkId()` when creating tokens so they match your gateway; testnet2 is network ID `4`, `NetworkId.TESTNET2` (mainnet is `NetworkId.MAINNET`, `1`). The old testnet, network 2, has no constant any more.
 
 The example waits for the result with `.get()`. In asynchronous applications, compose the returned futures; on Android, keep blocking calls off the UI thread.
 
