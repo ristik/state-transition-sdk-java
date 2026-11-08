@@ -64,6 +64,8 @@ public final class FileTrustBaseStore implements TrustBaseStore {
   private final Executor executor;
   /** Test hook: runs after the temporary file is complete and before it is moved into place. */
   volatile Runnable beforeMove;
+  /** Test hook: runs after the size of a stored file was judged and before it is read. */
+  volatile Runnable afterSizeCheck;
 
   /**
    * Create a store in a directory.
@@ -165,18 +167,22 @@ public final class FileTrustBaseStore implements TrustBaseStore {
     T run() throws IOException;
   }
 
-  private static byte[] readFile(Path path, long max) throws IOException {
+  private byte[] readFile(Path path, long max) throws IOException {
     try (FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
       if (channel.size() > max) {
         throw new TrustBaseStoreException(Reason.OVERSIZE, "The stored value exceeds " + max
             + " bytes.");
+      }
+      Runnable hook = this.afterSizeCheck;
+      if (hook != null) {
+        hook.run();
       }
       // the file may grow after the check: the read itself is bounded too
       ByteArrayOutputStream out = new ByteArrayOutputStream((int) Math.min(channel.size(), max));
       ByteBuffer buffer = ByteBuffer.allocate(8192);
       long total = 0;
       for (;;) {
-        buffer.clear();
+        ((java.nio.Buffer) buffer).clear(); // not ByteBuffer.clear(): absent before Java 9
         int read = channel.read(buffer);
         if (read < 0) {
           break;

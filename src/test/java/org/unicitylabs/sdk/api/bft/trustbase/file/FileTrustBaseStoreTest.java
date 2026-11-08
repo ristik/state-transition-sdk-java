@@ -138,6 +138,26 @@ class FileTrustBaseStoreTest {
   }
 
   @Test
+  void theSizeIsJudgedBeforeAnyByteIsReadAndTheReadItselfIsBounded() throws IOException {
+    FileTrustBaseStore s = store(this.tmp);
+    get(s.compareAndSwap(KEY, null, new byte[10]));
+    java.util.concurrent.atomic.AtomicInteger reads = new java.util.concurrent.atomic.AtomicInteger();
+    s.afterSizeCheck = reads::incrementAndGet;
+    assertEquals(Reason.OVERSIZE, reasonOf(() -> get(s.read(KEY, 9))));
+    assertEquals(0, reads.get(), "an oversize file is refused before it is read");
+
+    // a file that grows after the size check is caught by the bounded read
+    s.afterSizeCheck = () -> {
+      try {
+        Files.write(s.filePath(KEY), new byte[15]);
+      } catch (IOException e) {
+        throw new IllegalStateException(e);
+      }
+    };
+    assertEquals(Reason.OVERSIZE, reasonOf(() -> get(s.read(KEY, 10))));
+  }
+
+  @Test
   void removesTemporaryFilesACrashedWriterLeftUnderTheLock() throws IOException {
     FileTrustBaseStore s = store(this.tmp);
     String stem = s.filePath(KEY).getFileName().toString().replace(".cbor", "");
