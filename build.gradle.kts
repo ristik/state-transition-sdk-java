@@ -90,6 +90,9 @@ val generateSdkVersion by tasks.registering {
     inputs.property("version", sdkVersion)
     outputs.dir(outputDir)
     doLast {
+        require(sdkVersion.isNotBlank() && sdkVersion != "unspecified") {
+            "The project version is unset ('$sdkVersion'); the X-SDK-Version header needs a real one."
+        }
         val file = outputDir.get().file("org/unicitylabs/sdk/SdkVersion.java").asFile
         file.parentFile.mkdirs()
         file.writeText(

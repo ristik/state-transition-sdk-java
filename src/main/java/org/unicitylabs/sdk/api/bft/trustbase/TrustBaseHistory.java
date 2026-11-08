@@ -170,6 +170,8 @@ public final class TrustBaseHistory implements TrustBaseHistoryView {
         }
         if (index > 0) {
           entry.verifySuccessor(this.entries.get(index - 1));
+        } else {
+          entry.verifyGenesis();
         }
         return TrustBaseAppendOutcome.ALREADY_HELD;
       }

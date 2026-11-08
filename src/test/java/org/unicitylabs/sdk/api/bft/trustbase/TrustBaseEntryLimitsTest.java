@@ -290,4 +290,22 @@ class TrustBaseEntryLimitsTest {
         7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7}, map);
     assertEquals(List.of("a", "\uff5e", "\ud83d\ude00"), new ArrayList<>(entry.getSignatures().keySet()));
   }
+
+  @Test
+  void signerIdsOfDifferentLengthsAreOrderedByBytesNotByLengthAndSurviveARoundTrip() {
+    // "aa" < "b" < "bbb" lexicographically; a length-first order would put "b" first
+    Map<String, byte[]> map = new HashMap<>();
+    for (String id : new String[] {"bbb", "b", "aa"}) {
+      byte[] signature = new byte[65];
+      signature[0] = (byte) id.length();
+      map.put(id, signature);
+    }
+    TrustBaseEntry entry = new TrustBaseEntry(5, 2, 10,
+        List.of(new TrustBaseMember("a", key(0), 1)), 1, null, null, new byte[] {7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7}, map);
+    assertEquals(List.of("aa", "b", "bbb"), new ArrayList<>(entry.getSignatures().keySet()));
+    TrustBaseEntry decoded = TrustBaseEntry.decode(entry.encode());
+    assertEquals(List.of("aa", "b", "bbb"), new ArrayList<>(decoded.getSignatures().keySet()));
+    assertArrayEquals(entry.entryId(), decoded.entryId());
+  }
 }
