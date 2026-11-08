@@ -533,6 +533,11 @@ public final class TrustBaseSession implements TrustBaseUpdateTarget {
     public byte[] toBundle() {
       return live().toBundle();
     }
+
+    @Override
+    public byte[] getGenesisPin() {
+      return live().getGenesisPin();
+    }
   }
 
   // ---------------------------------------------------------------- saving and refreshing
