@@ -22,7 +22,7 @@ import org.unicitylabs.sdk.util.UnsignedLongs;
  * a gap. Appends are serialised and every reader sees a consistent chain; no I/O happens under the
  * lock. Epochs and rounds are unsigned 64-bit numbers carried as {@code long} bits.
  */
-public final class TrustBaseHistory {
+public final class TrustBaseHistory implements TrustBaseHistoryView {
 
   private final Object lock = new Object();
   private final List<TrustBaseEntry> entries = new ArrayList<>();
@@ -71,6 +71,7 @@ public final class TrustBaseHistory {
    *
    * @return immutable list, ascending from the genesis
    */
+  @Override
   public List<TrustBaseEntry> getEntries() {
     synchronized (this.lock) {
       return List.copyOf(this.entries);
@@ -82,6 +83,7 @@ public final class TrustBaseHistory {
    *
    * @return copy
    */
+  @Override
   public byte[] getGenesisPin() {
     return Arrays.copyOf(this.genesisPin, this.genesisPin.length);
   }
@@ -102,6 +104,7 @@ public final class TrustBaseHistory {
    *
    * @return the network, empty when the history is empty
    */
+  @Override
   public Optional<NetworkId> getNetworkId() {
     synchronized (this.lock) {
       return this.entries.isEmpty() ? Optional.empty()
@@ -114,6 +117,7 @@ public final class TrustBaseHistory {
    *
    * @return the tip, empty when the history is empty
    */
+  @Override
   public Optional<TrustBaseEntry> getTip() {
     synchronized (this.lock) {
       return this.entries.isEmpty() ? Optional.empty()
@@ -185,6 +189,7 @@ public final class TrustBaseHistory {
    * @return the entry, empty when the epoch is before the genesis or after the tip (the caller may
    *     fetch and append)
    */
+  @Override
   public Optional<TrustBaseEntry> entryForEpoch(long epoch) {
     synchronized (this.lock) {
       if (this.entries.isEmpty()) {
@@ -209,6 +214,7 @@ public final class TrustBaseHistory {
    * @return start round of the entry for {@code epoch + 1}, empty when none is held (the epoch is
    *     open-ended as far as this history knows)
    */
+  @Override
   public OptionalLong epochEndRound(long epoch) {
     if (epoch == -1L) {
       return OptionalLong.empty();
@@ -225,6 +231,7 @@ public final class TrustBaseHistory {
    * @return tagged bundle
    * @throws TrustBaseBundleException if the history is empty
    */
+  @Override
   public byte[] toBundle() {
     return TrustBaseBundle.encode(getEntries());
   }

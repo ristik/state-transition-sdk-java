@@ -6,22 +6,24 @@ import java.util.OptionalLong;
 import org.unicitylabs.sdk.api.NetworkId;
 
 /**
- * The read-only face of a history, as verification uses it. A session hands out a view that fails
- * with {@link HistoryConflictedException} once an authenticated fork closed the session.
+ * The read-only face of a history, as verification uses it: the held entries from the pinned
+ * genesis, each seal being placed in the entry of its own epoch. Implemented by
+ * {@link TrustBaseHistory} and by the cache session (whose view fails once an authenticated fork
+ * closed the session). Each method answers from one consistent chain, and the chain only grows.
  */
 public interface TrustBaseHistoryView {
 
   /**
    * Get the network of the held entries.
    *
-   * @return the network, empty when nothing is held
+   * @return the network, empty while the view holds no entry
    */
   Optional<NetworkId> getNetworkId();
 
   /**
    * Get the latest held entry.
    *
-   * @return the tip, empty when nothing is held
+   * @return the tip, empty while the view holds no entry
    */
   Optional<TrustBaseEntry> getTip();
 
@@ -35,16 +37,17 @@ public interface TrustBaseHistoryView {
   /**
    * Get the held entry of an epoch.
    *
-   * @param epoch the epoch (unsigned)
-   * @return the entry, empty before the genesis or after the tip
+   * @param epoch epoch, unsigned bits
+   * @return the entry, empty when the epoch is before the genesis or after the tip
    */
   Optional<TrustBaseEntry> entryForEpoch(long epoch);
 
   /**
-   * Get the last round of an epoch.
+   * Get the round at which the held successor of an epoch starts: the exclusive end of the epoch's
+   * interval (a round is in the epoch from its start round up to, not including, this round).
    *
-   * @param epoch the epoch (unsigned)
-   * @return the round, empty when unknown (the tip's epoch is open)
+   * @param epoch epoch, unsigned bits
+   * @return start round of the entry for {@code epoch + 1}, empty when none is held
    */
   OptionalLong epochEndRound(long epoch);
 
@@ -52,6 +55,14 @@ public interface TrustBaseHistoryView {
    * Export the held history as one complete bundle.
    *
    * @return the tag-39015 bundle
+   * @throws TrustBaseBundleException if the view holds no entry
    */
   byte[] toBundle();
+
+  /**
+   * Get the pinned entry id of the genesis.
+   *
+   * @return copy
+   */
+  byte[] getGenesisPin();
 }
