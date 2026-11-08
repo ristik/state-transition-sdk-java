@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import okhttp3.mockwebserver.SocketPolicy;
 import okio.Buffer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -147,7 +148,7 @@ class HttpTrustBaseSourceTest {
 
   @Test
   void cancellingTheFutureCancelsTheCall() throws Exception {
-    this.server.enqueue(new MockResponse().setHeadersDelay(5, TimeUnit.SECONDS).setBody("x"));
+    this.server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
     CompletableFuture<byte[]> f = source(null, SdkVersionHeader.sdkDefault())
         .getTrustBasePage(request(null));
     this.server.takeRequest(5, TimeUnit.SECONDS);

@@ -13,11 +13,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import org.unicitylabs.sdk.util.HexConverter;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.unicitylabs.sdk.api.NetworkId;
 import org.unicitylabs.sdk.serializer.cbor.CborSerializer;
+import org.unicitylabs.sdk.util.HexConverter;
 
 /** The shared GetTrustBase response vectors (bft-core 5d9a8eaa, gettrustbase/testdata/v1) against the page decoder. */
 class TrustBaseRangeVectorsTest {
@@ -87,7 +87,8 @@ class TrustBaseRangeVectorsTest {
         }
       } else {
         String errorClass = c.get("error").asText();
-        // Go labels a junk embedded entry a response failure (the entry's decode error is wrapped); here it is the entry's own encoding error.
+        // Go labels a junk embedded entry a response failure (its decode error is wrapped);
+        // here it is the entry's own encoding error.
         boolean wantEncoding = errorClass.equals("encoding")
             || name.contains("not a version 2 entry");
         TrustBaseException e = assertThrows(TrustBaseException.class,
