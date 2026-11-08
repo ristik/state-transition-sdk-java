@@ -31,7 +31,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.unicitylabs:java-state-transition-sdk:3.0-SNAPSHOT'
+    implementation 'org.unicitylabs:java-state-transition-sdk:4.0.0'
     implementation 'com.google.guava:guava:33.0.0-jre'
 }
 ```
