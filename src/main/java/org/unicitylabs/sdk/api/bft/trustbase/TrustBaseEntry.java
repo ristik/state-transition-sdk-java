@@ -72,6 +72,7 @@ public final class TrustBaseEntry {
   private final long epoch;
   private final long epochStartRound;
   private final List<TrustBaseMember> members;
+  private final Map<String, TrustBaseMember> memberIndex;
   private final long quorumThreshold;
   private final byte[] stateHash;
   private final byte[] changeRecordHash;
@@ -100,6 +101,11 @@ public final class TrustBaseEntry {
     this.epoch = epoch;
     this.epochStartRound = epochStartRound;
     this.members = List.copyOf(Objects.requireNonNull(members, "members cannot be null"));
+    Map<String, TrustBaseMember> index = new HashMap<>();
+    for (TrustBaseMember member : this.members) {
+      index.putIfAbsent(member.getNodeId(), member);
+    }
+    this.memberIndex = index;
     this.quorumThreshold = quorumThreshold;
     this.stateHash = copy(stateHash);
     this.changeRecordHash = copy(changeRecordHash);
@@ -179,6 +185,16 @@ public final class TrustBaseEntry {
    */
   public List<TrustBaseMember> getMembers() {
     return this.members;
+  }
+
+  /**
+   * Find a member by node id.
+   *
+   * @param nodeId node id
+   * @return the member, or null if the id names none
+   */
+  public TrustBaseMember findMember(String nodeId) {
+    return this.memberIndex.get(nodeId);
   }
 
   /**
@@ -575,13 +591,7 @@ public final class TrustBaseEntry {
    * @throws TrustBaseSignatureException if the signer is not a member or the signature is not valid
    */
   public long verifySignature(byte[] data, byte[] signature, String nodeId) {
-    TrustBaseMember member = null;
-    for (TrustBaseMember candidate : this.members) {
-      if (candidate.getNodeId().equals(nodeId)) {
-        member = candidate;
-        break;
-      }
-    }
+    TrustBaseMember member = this.memberIndex.get(nodeId);
     if (member == null) {
       throw new TrustBaseSignatureException("Signer \"" + nodeId + "\" is not a member.");
     }
